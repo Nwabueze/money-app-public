@@ -9,8 +9,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useRouter } from 'next/router'
 import Cookie from 'js-cookie';
 import axios from 'axios';
-import autoAlert from '../utils/autoAlert';
-import AlertDialog from './SimpleDialog';
+//import autoAlert from '../utils/autoAlert';
+//import AlertDialog from './SimpleDialog';
 import { useDispatch, useSelector } from 'react-redux';
 import { open_simple_dialogue, close_simple_dialogue, set_message } from '../Action';
 
@@ -73,15 +73,12 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const dispatch = useDispatch();
+    const [blurDisplay, setBlurDisplay] = useState("none");
+    const [blurMessage, setBlurMessage] = useState("");
 
-    const closePopUp = () => {
-        setTimeout(() => {
-            dispatch(set_message("What are you doing?"));
-            dispatch(close_simple_dialogue());
-        },10000);
-        return true;
-    }
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertDisplay, setAlertDisplay] = useState("none");
+
 
     useEffect(() => {
         //ookie.set("email", email);
@@ -91,7 +88,13 @@ export default function Login() {
         }
     }, [email, password]);
 
-    
+    const autoClose = () => {
+        setTimeout(() => {
+            setAlertDisplay("none");
+        },10000);
+        return true;
+    };
+
     const checkEmail = (email) => {
         
         const word = "Please enter valid email address";
@@ -130,27 +133,30 @@ export default function Login() {
     const loginHandler = () => {
         
         if(!email || !password){
-            dispatch(set_message("Checking your credentials, please wait..."));
-            dispatch(open_simple_dialogue());
+            //dispatch(set_message("Checking your credentials, please wait..."));
+            //dispatch(open_simple_dialogue());
             console.log("Not email or passw");
             console.log("Dialogue state is "+dialogueState)
-            dispatch(open_simple_dialogue());
+            //dispatch(open_simple_dialogue());
             
             return;
         }
         
 
-        const d = JSON.stringify({ email: email, password: password });
-        axios.get('/api/users/login?q=' + d).then(res => {
+        const d = JSON.stringify({ email: email, password: password, type: "login" });
+        setBlurMessage("Checking your credentials, please wait...");
+        setBlurDisplay("block");
+        axios.get('/api/users/?q=' + d).then(res => {
             const jsn = res.data;
             if (jsn.found) {
-                const info = "Your 14 digit code is " + jsn.code + " and Your four digit PIN is " + jsn.pin + ". Log onto the dashboard for info";
-                dispatch(set_message(info));
                 Cookie.set("email", email);
+                setBlurMessage("Login was successful, moving you to dashboard");
                 router.push(`/users/${jsn.name}`);
             } else {
-                dispatch(close_simple_dialogue());
-                console.log("Credentials is invalid")
+                setBlurDisplay("none");
+                setAlertMessage("Credentials is invalid");
+                setAlertDisplay("block");
+                autoClose();
             }
         });
     }
@@ -209,14 +215,25 @@ export default function Login() {
             
             <div
                 style={{
-                    "display": dialogueState ? "block" && closePopUp() : "none", "position": "fixed", "top": "200px", "left": "calc(50vw - 100px)",
+                    "display": alertDisplay, "position": "fixed", "top": "200px", "left": "calc(50vw - 100px)",
+                    "width": "200px", "height": "100px", "backgroundColor": "black", "color": "#ffff", "zIndex": 100000000000,
+                    "padding": "15px", "borderRadius": "10px", "paddingTop": "25px", "paddingBottom": "25px"
+                }}>
+                <Typography variant="caption">{alertMessage}</Typography>
+            </div>
+            <div
+                style={{
+                    "display": blurDisplay, "position": "fixed", "top": "200px", "left": "calc(50vw - 100px)",
                     "width": "200px", "height": "100px", "backgroundColor": "#ffff", "zIndex": 10000000001,
                     "padding": "15px", "borderRadius": "10px", "paddingTop": "25px", "paddingBottom": "25px"
                 }}>
-                <Typography variant="caption">loging in please wait...</Typography>
+                <Typography variant="caption">{blurMessage}</Typography>
             </div>
-            <div style={{ "display": dialogueState ? "block" : "none", "position": "fixed", "top": "0px", "left": "0px", "width": "100vw", "height": "100vh", "opacity": .5, "backgroundColor": "black", "zIndex": 1000000 }}></div>
-
+            <div 
+              style={{ "display": blurDisplay, "position": "fixed", "top": "0px", "left": "0px", 
+              "width": "100vw", "height": "100vh", "opacity": .5, "backgroundColor": "black", 
+              "zIndex": 1000000 }}>
+            </div>
         </div>
     );
 }

@@ -6,6 +6,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
+import Alert from '@material-ui/lab/Alert';
 import Box from '@material-ui/core/Box';
 import SendSteppers from './SendStepper';
 import axios from 'axios';
@@ -88,9 +89,9 @@ function TabView() {
 
   const [selectedIndex, setSelectedIndex] = useState(1);
 
-  const [bank, setBank] = useState("");
-  const [accountnumber, setAccountnumber] = useState("");
-  const [transferamount, setTransferamount] = useState("");
+  const [bank, setBank] = useState(false);
+  const [accountnumber, setAccountnumber] = useState(false);
+  const [transferamount, setTransferamount] = useState(false);
 
   const [credit, setCredit] = useState(0);
   
@@ -101,41 +102,47 @@ function TabView() {
   const [blurDisplay, setBlurDisplay] = useState("none");
   
   
+  
 
   const handleListItemClick = (event, index) => {
     setSelectedIndex(index);
   };
 
 
+   /* eslint-disable */
   useEffect(() => {
     
     let isMounted = true; 
 
-    axios.get('/api/users?q='+ (JSON.stringify({ email: email })) ).then(res => {
+    axios.get('/api/users?q='+ (JSON.stringify({ email: email, type: "find" })) ).then(res => {
       const jsn = res.data;
       if(jsn.found){
           setName(jsn.name);
           setPin(jsn.pin);
           setCode(jsn.code);
+          dispatch(set_balance(jsn.balance));
           setBalance(jsn.balance);
       }
     });
-
-    console.log(`Account number is ${accountnumber}`)
     
     return () => { isMounted = false }; 
-  }, [balance, bank, accountnumber, transferamount, credit]); 
+  }, []); 
+  /* eslint-enable */
   
   
   // Handle transfers
   const handleBank = (text) => {
+    if(!text){
+      setBank(false);
+      return false;
+    }
     setBank(text);
     console.log(`Bank: ${bank}`);
   }
 
   const handleAccountNumber = (accnum) => {
     if(accnum.match(/\D+/) != null || accnum.length != 10){
-      setAccountnumber("");
+      setAccountnumber(false);
       return false;
     }
     setAccountnumber(accnum);
@@ -143,40 +150,62 @@ function TabView() {
   }
 
   const handletransferAmount = (amount) => {
+    if(!amount){
+      setTransferamount(false);
+      return;
+    }
     if(amount+"".match(/\D+/) != null){
-      setTransferamount("");
+      setTransferamount(false);
+      return false;
     }
     setTransferamount(Number(amount));
   }
 
+  const autoClose = () => {
+    setTimeout(() => {
+        setAlertDisplay("none");
+    },10000);
+    return true;
+  };
 
   const doTransfer = () => {
+     
+      
     if(!bank){
-      autoAlert("Please select beneficiary bank and retry");
+      setAlertMessage("Please select beneficiary bank and retry");
+      setAlertDisplay("block");
+      autoClose();
       return;
     }
+    
     if(!accountnumber){
-      autoAlert("Invalid account number, please enter beneficiary account number and retry");
+      setAlertMessage("Invalid account number, please enter beneficiary account number and retry");
+      setAlertDisplay("block");
+      autoClose();
       return;
     }
     if(!transferamount){
-      autoAlert("Invalid amount, please enter amount and retry", "alert");
+      setAlertMessage("Invalid amount, please enter amount and retry");
+      setAlertDisplay("block");
+      autoClose();
       return;
     }
 
     const d = JSON.stringify(
       { email: email, type: "transfer", bank: bank, accountnumber: accountnumber, amount: transferamount }
     );
-    
-    dispatch(set_message("Please wait while the transfer is in progress, this may take a few seconds"));
-    dispatch(open_simple_dialogue());
-    axios.get('/api/users/transact?q='+d).then(res => {
+
+    setBlurMessage("Please wait while the transfer is in progress, this may take a few seconds");
+    setBlurDisplay("block");
+    axios.get('/api/users/?q='+d).then(res => {
+      setBlurDisplay("none");
       const jsn = res.data;
       if(jsn.sent){
-          dispatch(close_simple_dialogue());
+          setAlertMessage("Transfer was successful, balance is now $"+jsn.balance, "alert")
+          setAlertDisplay("block");
+          autoClose();
           dispatch(set_balance(jsn.balance));
           setBalance(jsn.balance);
-          autoAlert("Transfer was successful, balance is now $"+jsn.balance, "alert");
       }
     }).finally(() => {
       setBlurDisplay("none");
@@ -206,7 +235,7 @@ function TabView() {
     setBlurMessage("Please wait...");
     setBlurDisplay("block");
     const d = JSON.stringify({ type: "credit", email: email, amount: credit });
-    axios.get('/api/users/transact?q='+d).then(res => {
+    axios.get('/api/users/?q='+d).then(res => {
       setBlurDisplay("none");
       const jsn = res.data;
       if(jsn.found){
@@ -223,7 +252,7 @@ function TabView() {
 
   const checkBalance = () => {
     const d = JSON.stringify({ type: "balance", email: email });
-    axios.get('/api/users/transact?q='+d).then(res => {
+    axios.get('/api/users/?q='+d).then(res => {
       const jsn = res.data;
       if(jsn.found){
           dispatch(set_balance(jsn.balance));
@@ -237,7 +266,6 @@ function TabView() {
     });
   }
 
-  const m = {};
   
   const customAlert = () => {
     setAlertDisplay("block");
@@ -245,23 +273,8 @@ function TabView() {
       setAlertDisplay("none");
     }, 10000);
   };
-
-  m.blur = () => {
-    const el = document.findElementById("#blurPage");
-    el.style.dsplay = "none";
-  };
-
-  m.removeBlur = () => {
-    const el = document.findElementById("#blurPage");
-    el.style.dsplay = "block";
-  }
-
-  m.blurMessage = (message) => {
-    const el = document.findElementById("#blurMessage");
-    el.textContent = message;
-  }
-
-
+  
+  
   return (
     <div className={classes.root}>
       <AppBar position="static">
@@ -301,10 +314,10 @@ function TabView() {
               <FormHelperText>Select beneficiary bank</FormHelperText>
             </FormControl>
             
-            <TextField required id="standard-disabled" label="Account Number" placeholder="Account Number" onInput={(e) => { handleAccountNumber(e.target.value) }} />
+            <TextField required id="standard-disabled" label="Account Number" placeholder="Account Number" onChange={(e) => { handleAccountNumber(e.target.value) }} />
           </div>
           <div style={{ "marginTop": "30px" }}>
-            <TextField required label="Amount" type="text" placeholder="Amount" onInput={(e) => { handletransferAmount(e.target.value) }} />
+            <TextField required label="Amount" type="text" placeholder="Amount" onChange={(e) => { handletransferAmount(e.target.value) }} />
             <Button style={{ "marginTop": "30px" }} fullWidth variant="contained" color="primary" onClick={doTransfer}>
               do transfer
             </Button>
@@ -313,6 +326,13 @@ function TabView() {
       </TabPanel>
       <TabPanel value={value} index={2}>
         <div style={{"marginTop": "30px"}}>
+          {
+            email ? '' :
+            <Typography>
+              <Alert severity="error">We could not fetch your data.  To perfom any transaction, please reload this page now</Alert>
+            </Typography>
+          }
+         
       <List component="nav" aria-label="secondary mailbox folder">
         <ListItem
           button
@@ -357,21 +377,21 @@ function TabView() {
       
       <div 
       style={{"display":alertDisplay,"position":"fixed","top":"200px","left":"calc(50vw - 100px)",
-      "width":"200px","height":"100px","backgroundColor":"black","color":"#ffff","z-index":100000000000,
+      "width":"200px","height":"100px","backgroundColor":"black","color":"#ffff","zIindex":100000000000,
       "padding":"15px","borderRadius":"10px","paddingTop":"25px","paddingBottom":"25px"
       }}>
         <Typography variant="caption">{alertMessage}</Typography>
       </div>
       <div 
       style={{"display":blurDisplay,"position":"fixed","top":"200px","left":"calc(50vw - 100px)",
-      "width":"200px","height":"100px","backgroundColor":"#ffff","z-index":10000000001,
+      "width":"200px","height":"100px","backgroundColor":"#ffff","zIndex":10000000001,
       "padding":"15px","borderRadius":"10px","paddingTop":"25px","paddingBottom":"25px"
       }}>
         <Typography variant="caption">{blurMessage}</Typography>
       </div>
       <div 
       style={{"display":blurDisplay,"position":"fixed","top":"0px","left":"0px","width":"100vw",
-      "height":"100vh","opacity":.5,"backgroundColor":"black","z-index":1000000}}></div>
+      "height":"100vh","opacity":.5,"backgroundColor":"black","zIndex":1000000}}></div>
         
     </div>
   );

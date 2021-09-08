@@ -220,7 +220,7 @@ export default function Layout({ children }) {
             <MenuIcon />
           </IconButton>
           <Typography className={classes.title} variant="h6" noWrap>
-            <Link href="/"><a>Money App</a></Link>
+            <Link style={{color: "#fff"}} href="/"><a>Money App</a></Link>
           </Typography>
           <div className={classes.search}>
             <div className={classes.searchIcon}>

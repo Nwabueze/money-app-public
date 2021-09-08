@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import Button from '@material-ui/core/Button';
+import Container from '@material-ui/core/Container';
 import Typography from '@material-ui/core/Typography';
 import useStyles from '../utils/styles';
 
@@ -23,6 +24,17 @@ export default function Home() {
         <h1 className="title">
            <Link href="/" color="primary"><a>Money App</a></Link>
         </h1>
+
+        <Container maxWidth="sm">
+          <Typography component="div" style={{ backgroundColor: '#cfe8fc', height: 'auto', marginTop: '20px', padding: "15px", borderRadius: "6px" }}>
+            With this test app, you can send money to anyone as long as you have their 14 digit code. <br />
+            You can transfer money to any supported bank. You can always add money to your own account.
+            <br />
+            Once you have successfully registered, head to the BALANCE tab and add money to your account.<br />
+            Or send your 14 digit to someone and recieve money from them. <br />
+            You can also send money to people or transfer money to them.
+          </Typography>
+        </Container>
 
         <div style={{"marginTop": "50px"}}>
           <Typography className="title" bordercolor="primary.main">

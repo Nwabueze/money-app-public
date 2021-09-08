@@ -243,19 +243,37 @@ export default function SendSteppers() {
         setAlertDisplay("none");
     },10000);
     return true;
-};
+  };
 
   const steps = getSteps();
 
   const handleNext = (e) => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
     if (activeStep == 2) {
+      if(!pin){
+        setAlertMessage("Please enter valid PIN");
+        setAlertDisplay("block");
+        autoClose();
+      }
+
+      if(!code){
+        setAlertMessage("Please enter beneficiary 14 digit code");
+        setAlertDisplay("block");
+        autoClose();
+      }
+
+      if(!amount){
+        setAlertMessage("Please enter valid amount");
+        setAlertDisplay("block");
+        autoClose();
+      }
+
 
       setBlurDisplay("block");
       setBlurMessage("Transaction in progress please wait...");
       const d = JSON.stringify({ email: email, type: "send", pin: pin, code: code, amount: amount });
 
-      axios.get('/api/users/transact?q=' + d).then(res => {
+      axios.get('/api/users/?q=' + d).then(res => {
         setBlurDisplay("none");
         const jsn = res.data;
         if (jsn.sent) {
@@ -265,7 +283,9 @@ export default function SendSteppers() {
           setAlertDisplay("block");
           autoClose();
         } else {
-          setAlertMessage("Couldn't complete transaction, please try again");
+          setAlertMessage("Transaction failed, Reason: "+jsn.reason);
+          setAlertDisplay("block");
+          autoClose();
         }
       }).finally(() => {
         setBlurDisplay("none");
@@ -282,6 +302,7 @@ export default function SendSteppers() {
   const handleReset = () => {
     setActiveStep(0);
   };
+  
 
   return (
     <div className={classes.root}>
@@ -326,7 +347,8 @@ export default function SendSteppers() {
       <div
         style={{
           "display": alertDisplay, "position": "fixed", "top": "200px", "left": "calc(50vw - 100px)",
-          "width": "200px", "height": "100px", "backgroundColor": "black", "color": "#ffff", "zIndex": 100000000000,
+          "width": "200px", "height": "100px", "backgroundColor": "black", "color": "#ffff", 
+          "zIndex": 100002,
           "padding": "15px", "borderRadius": "10px", "paddingTop": "25px", "paddingBottom": "25px"
         }}>
         <Typography variant="caption">{alertMessage}</Typography>
@@ -334,12 +356,17 @@ export default function SendSteppers() {
       <div
         style={{
           "display": blurDisplay, "position": "fixed", "top": "200px", "left": "calc(50vw - 100px)",
-          "width": "200px", "height": "100px", "backgroundColor": "#ffff", "zIndex": 10000000001,
+          "width": "200px", "height": "100px", "backgroundColor": "#ffff", "zIndex": 100001,
           "padding": "15px", "borderRadius": "10px", "paddingTop": "25px", "paddingBottom": "25px"
         }}>
         <Typography variant="caption">{blurMessage}</Typography>
       </div>
-      <div style={{ "display": blurDisplay, "position": "fixed", "top": "0px", "left": "0px", "width": "100vw", "height": "100vh", "opacity": .5, "backgroundColor": "black", "zIndex": 1000000 }}></div>
+      <div 
+        style={{ "display": blurDisplay, "position": "fixed", "top": "0px", "left": "0px", 
+        "width": "100vw", "height": "100vh", "opacity": .5, "backgroundColor": "black", 
+        "zIndex": 100000 
+        }}>
+      </div>
 
     </div>
   );

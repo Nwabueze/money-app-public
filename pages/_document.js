@@ -1,6 +1,8 @@
 // Only for applying styles on page refresh
 import { ServerStyleSheets } from '@material-ui/core/styles';
+/* eslint-disable */
 import Document, { Html, Head, Main, NextScript } from 'next/document';
+/* eslint-enable */
 import React from 'react';
 import { GoogleFonts } from "nextjs-google-fonts/GoogleFonts";
 
@@ -26,7 +28,9 @@ MyDocument.getInitialProps = async (ctx) => {
     const originalRenderPage = ctx.renderPage;
     ctx.renderPage = () => {
         return originalRenderPage({
+            /* eslint-disable */
             enhanceApp: (App) => (props) => sheets.collect(<App {...props} />)
+            /* eslint-enable */
         })
     }
 

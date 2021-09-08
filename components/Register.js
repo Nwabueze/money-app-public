@@ -59,7 +59,7 @@ export default function Register() {
     const [warning, setWarning] = useState("Please enter valid inputs only");
     const [warn, setWarn] = useState("none");
     const [alert, setAlert] = useState("none");
-    const [border, setBorder] = useState("");
+    //const [border, setBorder] = useState("");
 
     const [blurDisplay, setBlurDisplay] = useState("none");
     const [blurMessage, setBlurMessage] = useState("");
@@ -219,17 +219,21 @@ export default function Register() {
         setBlurDisplay("block");
         setBlurMessage("Please wait while your account is beign created, this may take a few seconds");
         
-        const d = JSON.stringify({ firstname: firstname, lastname: lastname, email: email, password: password });
+        const d = JSON.stringify({ firstname: firstname, lastname: lastname, email: email, password: password, type: "register" });
         
-        axios.get('/api/users/create?q=' + d).then(res => {
+        axios.get('/api/users/?q=' + d).then(res => {
             console.log(res.data);
             const jsn = res.data;
             if (jsn.found) {
+                cookie.set("email", email);
                 setWarnSeverity("success");
                 setBlurMessage("Your 14 digit code is " + jsn.code + " and Your four digit PIN is " + jsn.pin + ". Log onto the dashboard for info");
-               
                 router.push(`/users/${firstname}`);
             } else {
+                setBlurDisplay("none");
+                setAlertMessage("Sorry, we couldn't complete your registration, please try again later.");
+                setAlertDisplay("block");
+                autoClose();
                 setWarn("block");
                 setWarnSeverity("error");
                 setBlurDisplay("none");
@@ -326,7 +330,11 @@ export default function Register() {
                 }}>
                 <Typography variant="caption">{blurMessage}</Typography>
             </div>
-            <div style={{ "display": blurDisplay, "position": "fixed", "top": "0px", "left": "0px", "width": "100vw", "height": "100vh", "opacity": .5, "backgroundColor": "black", "zIndex": 1000000 }}></div>
+            <div 
+              style={{ "display": blurDisplay, "position": "fixed", "top": "0px", "left": "0px", 
+              "width": "100vw", "height": "100vh", "opacity": .5, "backgroundColor": "black", 
+              "zIndex": 1000000 }}>
+            </div>
 
         </div>
     );

@@ -58,7 +58,7 @@ export default function RecipientNumber() {
 
   useEffect(() => {
     console.log(`14 digit code is now ${code14}`);
-  },[code14digit]);
+  },[code14]);
   
   const dispatch = useDispatch();
 
